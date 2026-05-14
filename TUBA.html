@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Al-Tuba Oil Depot</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #dfe6e9; padding: 15px; display: flex; justify-content: center; direction: ltr; }
+        .app-card { background: white; width: 100%; max-width: 600px; padding: 25px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border-top: 8px solid #d35400; position: relative; }
+        h1 { text-align: center; color: #2c3e50; margin: 0; font-size: 24px; font-weight: 800; }
+        .date-box { text-align: center; color: #636e72; font-size: 14px; margin-bottom: 20px; }
+        
+        /* شبكة الإدخال */
+        .tk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .input-field label { display: block; font-size: 13px; font-weight: bold; color: #2d3436; }
+        .input-field input { width: 100%; padding: 10px; border: 2px solid #ecf0f1; border-radius: 10px; box-sizing: border-box; font-weight: bold; }
+
+        /* منطقة النتائج الجديدة */
+        .results-wrapper { display: none; grid-template-columns: 120px 1fr 1fr; gap: 10px; margin-top: 20px; border-top: 2px dashed #eee; padding-top: 20px; }
+        
+        /* عمود المدخلات الجانبي */
+        .tk-summary-col { display: flex; flex-direction: column; gap: 5px; }
+        .summary-item { background: #f8f9fa; border: 1px solid #dee2e6; padding: 5px; border-radius: 5px; font-size: 12px; display: flex; justify-content: space-between; }
+        .summary-item b { color: #d35400; }
+
+        .res-column { display: flex; flex-direction: column; gap: 10px; }
+        .res-box { background: #fcfcfc; padding: 12px; border-radius: 12px; border-left: 5px solid #27ae60; display: flex; flex-direction: column; align-items: center; min-height: 60px; justify-content: center; }
+        .b-border { border-left-color: #2980b9; }
+        .res-label { font-size: 11px; color: #7f8c8d; font-weight: bold; text-transform: uppercase; }
+        .res-val { font-size: 17px; color: #2c3e50; font-weight: 800; }
+
+        .btn-group { display: flex; gap: 8px; margin-top: 25px; flex-wrap: wrap; }
+        .btn-ok { flex: 100%; background: #2c3e50; color: white; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 18px; }
+        .btn-pdf { flex: 1; background: #e74c3c; color: white; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-img { flex: 1; background: #27ae60; color: white; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-reset { flex: 1; background: #636e72; color: white; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        
+        @media print { .no-print { display: none !important; } .results-wrapper { display: grid !important; } }
+    </style>
+</head>
+<body>
+
+    <div class="app-card" id="appContent">
+        <h1>Al-Tuba Oil Depot</h1>
+        <div id="liveDate" class="date-box"></div>
+
+        <div class="tk-grid no-print">
+            <div class="input-field"><label>TK3</label><input type="number" class="tk-val" data-name="TK3"></div>
+            <div class="input-field"><label>TK4</label><input type="number" class="tk-val" data-name="TK4"></div>
+            <div class="input-field"><label>TK5</label><input type="number" class="tk-val" data-name="TK5"></div>
+            <div class="input-field"><label>TK7</label><input type="number" class="tk-val" data-name="TK7"></div>
+            <div class="input-field"><label>TK8</label><input type="number" class="tk-val" data-name="TK8"></div>
+            <div class="input-field"><label>TK9</label><input type="number" class="tk-val" data-name="TK9"></div>
+            <div class="input-field"><label>TK10</label><input type="number" class="tk-val" data-name="TK10"></div>
+            <div class="input-field"><label>TK11</label><input type="number" class="tk-val" data-name="TK11"></div>
+        </div>
+
+        <button class="btn-ok no-print" onclick="calculateNow()">OK</button>
+
+        <div id="resPanel" class="results-wrapper">
+            <div class="tk-summary-col" id="tkSummary">
+                </div>
+
+            <div class="res-column">
+                <div class="res-box">
+                    <span class="res-label">Total m³</span>
+                    <span class="res-val" id="m3Total">0</span>
+                </div>
+                <div class="res-box">
+                    <span class="res-label">Avail m³</span>
+                    <span class="res-val" id="m3Avail">0</span>
+                </div>
+                <div class="res-box">
+                    <span class="res-label">Free m³</span>
+                    <span class="res-val" id="m3Free">0</span>
+                </div>
+            </div>
+
+            <div class="res-column">
+                <div class="res-box b-border">
+                    <span class="res-label">Total b</span>
+                    <span class="res-val" id="bTotal">0</span>
+                </div>
+                <div class="res-box b-border">
+                    <span class="res-label">Avail b</span>
+                    <span class="res-val" id="bAvail">0</span>
+                </div>
+                <div class="res-box b-border">
+                    <span class="res-label">Free b</span>
+                    <span class="res-val" id="bFree">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group no-print">
+            <button onclick="saveAsPDF()" class="btn-pdf">PDF</button>
+            <button onclick="saveAsImage()" class="btn-img">Image</button>
+            <button onclick="hardReset()" class="btn-reset">Reset</button>
+        </div>
+
+        <!-- تم حذف اسم المبرمج أسامة عبد العباس -->
+    </div>
+
+    <script>
+        function updateTime() {
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            document.getElementById('liveDate').innerText = new Date().toLocaleString('en-US', options);
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        function formatMath(n) { return Math.round(Math.abs(n)).toLocaleString('en-US'); }
+
+        function calculateNow() {
+            let sum = 0;
+            let summaryHTML = '';
+            const inputs = document.querySelectorAll('.tk-val');
+            
+            inputs.forEach(i => {
+                let val = parseFloat(i.value) || 0;
+                sum += val;
+                // إنشاء مربعات المدخلات للنتيجة
+                summaryHTML += `<div class="summary-item"><span>${i.getAttribute('data-name')}:</span> <b>${val}</b></div>`;
+            });
+
+            if (sum <= 0) {
+                alert("يرجى إدخال القيم أولاً");
+                return;
+            }
+
+            document.getElementById('tkSummary').innerHTML = summaryHTML;
+            const panel = document.getElementById('resPanel');
+            panel.style.display = "grid";
+
+            let m3 = sum * 66;
+            let m3Avail = m3 - 100000;
+            let m3Free = m3 - 403600;
+            const b = 6.2898;
+
+            document.getElementById('m3Total').innerText = formatMath(m3);
+            document.getElementById('m3Avail').innerText = formatMath(m3Avail);
+            document.getElementById('m3Free').innerText = formatMath(m3Free);
+            document.getElementById('bTotal').innerText = formatMath(m3 * b);
+            document.getElementById('bAvail').innerText = formatMath(m3Avail * b);
+            document.getElementById('bFree').innerText = formatMath(m3Free * b);
+        }
+
+        function hardReset() {
+            document.querySelectorAll('.tk-val').forEach(input => input.value = "");
+            document.getElementById('resPanel').style.display = "none";
+        }
+
+        function saveAsImage() {
+            const panel = document.getElementById('resPanel');
+            if (window.getComputedStyle(panel).display === "none") {
+                alert("اضغط OK أولاً لإظهار النتائج");
+                return;
+            }
+
+            const element = document.getElementById('appContent');
+            const noPrint = document.querySelectorAll('.no-print');
+            noPrint.forEach(el => el.style.display = 'none');
+
+            html2canvas(element, { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Al-Tuba-Report.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                noPrint.forEach(el => el.style.display = '');
+            });
+        }
+
+        function saveAsPDF() {
+            const panel = document.getElementById('resPanel');
+            if (window.getComputedStyle(panel).display === "none") {
+                alert("اضغط OK أولاً لإظهار النتائج");
+                return;
+            }
+            
+            const element = document.getElementById('appContent');
+            const opt = {
+                margin: 10,
+                filename: 'Al-Tuba-Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
+            });
+        }
+    </script>
+</body>
+</html>
